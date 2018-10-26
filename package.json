@@ -1,0 +1,32 @@
+{
+  "name": "node-map-reduce",
+  "version": "0.0.0",
+  "description": "Bare-bones single-machine map-reduce engine written in node ",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sedge/node-map-reduce.git"
+  },
+  "author": "Kieran Sedgwick",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/sedge/node-map-reduce/issues"
+  },
+  "homepage": "https://github.com/sedge/node-map-reduce#readme",
+  "dependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "bluebird": "^3.5.2",
+    "bunyan": "^1.8.12",
+    "convict": "^4.4.0",
+    "express": "^4.16.4",
+    "lodash": "^4.17.11",
+    "node-redis": "^0.1.7",
+    "redis": "^2.8.0"
+  }
+}
