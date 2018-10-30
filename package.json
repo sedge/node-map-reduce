@@ -22,11 +22,16 @@
     "@babel/preset-env": "^7.1.0",
     "@babel/register": "^7.0.0",
     "bluebird": "^3.5.2",
+    "body-parser": "^1.18.3",
     "bunyan": "^1.8.12",
     "convict": "^4.4.0",
+    "cookie-parser": "^1.4.3",
     "express": "^4.16.4",
+    "joi": "^14.0.2",
     "lodash": "^4.17.11",
+    "morgan": "^1.9.1",
     "node-redis": "^0.1.7",
-    "redis": "^2.8.0"
+    "redis": "^2.8.0",
+    "redlock": "^3.1.2"
   }
 }

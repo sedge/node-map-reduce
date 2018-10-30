@@ -1,13 +1,16 @@
+// TODO: Hook this & reducer.js up with babel
+
 import _ from 'lodash';
-import bunyan from 'bunyan';
 import convict from 'convict';
 import bluebird from 'bluebird';
 import redis from 'redis';
-import Redlock from 'redlock';
-
-import { constructServer } from './app';
 
 bluebird.promisifyAll(redis);
+
+import jobs from './jobs';
+
+const jobId = Number(process.argv[2]);
+const chunkId = Number(process.argv[3]);
 
 // TODO: Move this to it's own file to reduce redundant code
 const config = convict({
@@ -68,65 +71,35 @@ const config = convict({
 });
 
 config.loadFile(`./config.${config.get('env')}.json`);
-config.validate({ allowed: 'strict' });
 
+// TODO: add logging to file
 const logger = bunyan.createLogger({
-  name: `(port ${config.get('app_port')}) node-map-reduce@${config.get('env')}`
+  name: `(mapper, job ${jobId} chunk ${chunkId}) node-map-reduce@${config.get('env')}`
 });
 
-async function init() {
-  logger.info('************  INITIALIZING  ************');
+async function run () {
+  let redisClient;
+
+  let job = _.find(jobs, { id: jobId });
 
   // Note, we aren't configuring the app to handle dropped redis connections.
   // In production environments this can happen without it being indicative of a problem,
   // so any adaptation of this code for a prod environment needs to account for this.
-  let redisClient;
-
   await new Promise((resolve, reject) => {
     redisClient = redis.createClient(config.get('redis_port'), config.get('redis_uri'));
 
     redisClient.on('connect', () => resolve());
   });
 
-  logger.info('************  REDIS CONNECTED  ************');
+  const rawPayload = await redisClient.getAsync(`mapreduce:${jobId}:${chunkId}:payload`);
+  const payload = JSON.parse(rawPayload);
 
-  redisClient.on('error', err => {
-    logger.error(`REDIS error`);
-    logger.error(err);
+  const results = _.map(payload, job.mapper);
 
-    throw err;
-  });
-
-  const redlock = new Redlock(
-    [redisClient],
-    {
-      driftFactor: config.get('redis_drift_factor'),
-      retryCount: config.get('redis_retry_count'),
-      retryDelay: config.get('redis_retry_delay'),
-      retryJitter: config.get('redis_jitter')
-    }
-  );
-
-  const app = constructServer({ redisClient, redlock, logger, config });
-
-  await new Promise((resolve, reject) => {
-    app.listen(config.get('app_port'), err => {
-      if (err) { reject(err); }
-
-      resolve();
-    })
-  });
-
-  logger.info('************  API SERVER CONNECTED  ************');
+  await redisClient.setAsync(`mapreduce:${jobId}:${chunkId}:results`, JSON.stringify(results));
 }
 
-init()
-  .then(
-    () => logger.info('************ ALL SYSTEMS GO ************'),
-    err => {
-      logger.fatal('Mayday!');
-      logger.fatal(err);
-
-      process.exit(1);
-    }
-  );
+run()
+  .then(process.send(`${jobId}:${chunkId} COMPLETE`, () => {
+    process.exit(0);
+  }));

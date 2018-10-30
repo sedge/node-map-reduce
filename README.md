@@ -8,10 +8,9 @@
 ### Features
 
 1. Multi-threading support
-2. Fail-safe queuing with redis
-3. Standardized module design, making adding new jobs easy
-4. REST API for payload delivery
-5. Sample jobs to help you dive in
+2. Standardized module design, making adding new jobs easy
+3. REST API for payload delivery
+4. Sample jobs to help you dive in
 
 ### Dependancies
 

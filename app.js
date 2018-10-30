@@ -1,25 +1,44 @@
+import _ from 'lodash';
+
 import express from 'express';
+import loggerMiddleware from 'morgan';
+import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 
-// import jobs from 'jobs';
+import { buildHandler } from './handler';
+import jobs from './jobs';
 
-export function constructServer ({ redisClient, logger, config }) {
-	return express();
+export function constructServer ({ redisClient, redlock, logger, config }) {
+  const app = express();
+
+  app.disable('x-powered-by');
+
+  app.use(loggerMiddleware('dev'));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use((req, res, next) => {
+    res.set({
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE',
+        'Access-Control-Expose-Headers': 'X-API-Version, Etag',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': [
+            'Content-Type',
+            'Content-Range',
+            'Content-Disposition',
+            'Origin',
+            'Accept',
+            'Authorization',
+        ].join(', '),
+        'Access-Control-Max-Age': config.security.corsMaxAge
+    });
+    next();
+  });
+
+  for (let job of jobs) {
+    app.use(
+      buildHandler({ job, redisClient, redlock, logger, config })
+    );
+  }
+
+  return app;
 }
-
-// Todo:
-	// Build `job` module abstraction
-		// HTTP method + endpoint
-		// Map function
-		// Reduce function
-		// Payload validation with joi
-		// Output mapping function
-	// Build generic request handler and dynamic route configuration
-	// Build Map/Reduce engine
-		// Build redis queue schema
-		// Build cluster logic to co-ordinate threads
-		// Code reduction handler
-			// Enforcing locking
-			// Code automatic retry
-
-	// Code integration test coverage
-
