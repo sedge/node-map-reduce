@@ -1,5 +1,3 @@
-// TODO: Hook this & reducer.js up with babel
-
 import _ from 'lodash';
 import convict from 'convict';
 import bluebird from 'bluebird';
@@ -7,7 +5,7 @@ import redis from 'redis';
 
 bluebird.promisifyAll(redis);
 
-import jobs from './jobs';
+import jobs from '../jobs';
 
 const jobId = Number(process.argv[2]);
 const chunkId = Number(process.argv[3]);
@@ -73,9 +71,9 @@ const config = convict({
 config.loadFile(`./config.${config.get('env')}.json`);
 
 // TODO: add logging to file
-const logger = bunyan.createLogger({
-  name: `(mapper, job ${jobId} chunk ${chunkId}) node-map-reduce@${config.get('env')}`
-});
+// const logger = bunyan.createLogger({
+//   name: `(mapper, job ${jobId} chunk ${chunkId}) node-map-reduce@${config.get('env')}`
+// });
 
 async function run () {
   let redisClient;
@@ -93,13 +91,14 @@ async function run () {
 
   const rawPayload = await redisClient.getAsync(`mapreduce:${jobId}:${chunkId}:payload`);
   const payload = JSON.parse(rawPayload);
-
   const results = _.map(payload, job.mapper);
 
   await redisClient.setAsync(`mapreduce:${jobId}:${chunkId}:results`, JSON.stringify(results));
 }
 
 run()
-  .then(process.send(`${jobId}:${chunkId} COMPLETE`, () => {
-    process.exit(0);
-  }));
+  .then(() => {
+    process.send(`${jobId}:${chunkId} COMPLETE`, () => {
+      process.exit(0);
+    });
+  });

@@ -29,7 +29,6 @@ export function constructServer ({ redisClient, redlock, logger, config }) {
             'Accept',
             'Authorization',
         ].join(', '),
-        'Access-Control-Max-Age': config.security.corsMaxAge
     });
     next();
   });
